@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright © 2020 Skyline Team and Contributors (https://github.com/skyline-emu/)
 
+#include <string>
 #include <csignal>
 #include <pthread.h>
 #include <android/asset_manager_jni.h>
@@ -20,6 +21,7 @@
 #include "skyline/kernel/types/KProcess.h"
 #include "skyline/logger/logger.h"
 #include "skyline/soc/gm20b/engines/engine.h"
+#include <audio_core/sink/sink_details.h>
 
 jint Fps; //!< An approximation of the amount of frames being submitted every second
 jfloat AverageFrametimeMs; //!< The average time it takes for a frame to be rendered and presented in milliseconds
@@ -54,6 +56,15 @@ static std::string GetTimeZoneName() {
 
     // Fallback to GMT
     return "GMT";
+}
+
+std::string ConvertJStringToString(JNIEnv* env, jstring jStr) {
+    if (!jStr) return "";
+
+    const char* chars = env->GetStringUTFChars(jStr, nullptr);
+    std::string str(chars);
+    env->ReleaseStringUTFChars(jStr, chars);
+    return str;
 }
 
 extern "C" JNIEXPORT void Java_emu_skyline_EmulationActivity_executeApplication(
@@ -253,6 +264,7 @@ extern "C" JNIEXPORT void JNICALL Java_emu_skyline_EmulationActivity_enableJit(J
     skyline::kernel::isJitEnabled = enable;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_emu_skyline_EmulationActivity_setAudioSink(JNIEnv *env, jobject obj, jstring sink) {
+extern "C" JNIEXPORT void JNICALL Java_emu_skyline_EmulationActivity_setAudioSink(JNIEnv *env, jobject obj, jstring jSink) {
+    std::string sink = ConvertJStringToString(env, jSink);
     AudioCore::Sink::AudioSink = sink;
 }
